@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,13 +40,16 @@ const StudentComments: React.FC<StudentCommentsProps> = ({
   }, [studentId]);
 
   const loadComments = async () => {
-    // Prevent multiple simultaneous loads
     if (loading) return;
     try {
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
       const { data, error } = await supabase
         .from('student_comments')
         .select('*')
         .eq('student_id', studentId)
+        .gte('created_at', tenDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -188,6 +191,38 @@ const StudentComments: React.FC<StudentCommentsProps> = ({
     }
   };
 
+  const handleDeleteComment = async (commentId: string, commentOwnerId: string) => {
+    if (!userProfile) {
+      toast.error('Please log in to delete comments');
+      return;
+    }
+
+    if (userProfile.id !== commentOwnerId) {
+      toast.error('You can only delete your own comments');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('student_comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      toast.success('Comment deleted successfully');
+      loadComments();
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Error deleting comment:', error);
+      toast.error(msg || 'Failed to delete comment');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -258,7 +293,7 @@ const StudentComments: React.FC<StudentCommentsProps> = ({
                 className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       comment.commenter_role === 'admin'
                         ? 'bg-red-100 text-red-700'
@@ -270,9 +305,20 @@ const StudentComments: React.FC<StudentCommentsProps> = ({
                       {comment.commenter_name || (comment.commenter_role === 'admin' ? 'Admin' : 'Teacher')}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {new Date(comment.created_at).toLocaleDateString()}
+                    </span>
+                    {userProfile && comment.commented_by === userProfile.id && viewMode === 'teacher-admin' && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id, comment.commented_by!)}
+                        className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
+                        title="Delete comment"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-700 leading-relaxed">{comment.comment_text}</p>
               </motion.div>

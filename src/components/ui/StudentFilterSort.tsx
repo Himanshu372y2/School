@@ -10,14 +10,19 @@ interface StudentFilterSortProps {
     percentageMax?: number;
     nameStartsWith?: string;
     nameEndsWith?: string;
+    classSection?: string;
   };
+  availableClasses?: string[];
+  showClassFilter?: boolean;
 }
 
 const StudentFilterSort: React.FC<StudentFilterSortProps> = ({
   onSortChange,
   onFilterChange,
   currentSort,
-  filters
+  filters,
+  availableClasses = [],
+  showClassFilter = false
 }) => {
   return (
     <div className="bg-gray-50 rounded-xl p-4 space-y-4 border-2 border-gray-200">
@@ -50,6 +55,26 @@ const StudentFilterSort: React.FC<StudentFilterSortProps> = ({
             <option value="admission_id-desc">Admission ID (Z to A)</option>
           </select>
         </div>
+
+        {showClassFilter && availableClasses.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by Class
+            </label>
+            <select
+              value={filters.classSection || ''}
+              onChange={(e) => onFilterChange('classSection', e.target.value || undefined)}
+              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Classes</option>
+              {availableClasses.map((cls) => (
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -116,6 +141,7 @@ const StudentFilterSort: React.FC<StudentFilterSortProps> = ({
               onFilterChange('percentageMax', undefined);
               onFilterChange('nameStartsWith', undefined);
               onFilterChange('nameEndsWith', undefined);
+              onFilterChange('classSection', undefined);
               onSortChange('name', 'asc');
             }}
             className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"

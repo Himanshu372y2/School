@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Trash2, BookOpen, Calendar, MessageSquare } from 'lucide-react';
+import { Trash2, BookOpen, Calendar, MessageSquare, Trophy } from 'lucide-react';
 import MarksManagement from './MarksManagement';
 import AttendanceManagement from './AttendanceManagement';
 import CommentsManagement from './CommentsManagement';
+import TeacherRankingSection from './TeacherRankingSection';
 import { supabase } from '../lib/supabase';
 
 interface TeacherData {
@@ -32,7 +33,7 @@ const TeacherDashboard: React.FC = () => {
     teacher = loggedUser as TeacherData;
   }
 
-  const [activeTab, setActiveTab] = useState<'homework' | 'marks' | 'attendance' | 'comments'>('homework');
+  const [activeTab, setActiveTab] = useState<'homework' | 'marks' | 'attendance' | 'comments' | 'ranking'>('homework');
   const [classSection, setClassSection] = useState('');
   const [availableClassSections, setAvailableClassSections] = useState<string[]>([]);
   const [teacherClassSectionsData, setTeacherClassSectionsData] = useState<Array<{class_section: string, subject: string}>>([]);
@@ -366,6 +367,17 @@ const TeacherDashboard: React.FC = () => {
               <MessageSquare size={20} />
               <span>Comments</span>
             </button>
+            <button
+              onClick={() => setActiveTab('ranking')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
+                activeTab === 'ranking'
+                  ? 'bg-blue-500 text-white shadow-lg transform scale-105'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md'
+              }`}
+            >
+              <Trophy size={20} />
+              <span>Rankings</span>
+            </button>
           </div>
         </div>
         <div className="p-8 bg-gradient-to-r from-blue-500 to-cyan-500">
@@ -523,6 +535,13 @@ const TeacherDashboard: React.FC = () => {
             <CommentsManagement
               userRole="teacher"
               userId={profile?.id || teacher?.id || ''}
+              teacherClassSections={availableClassSections}
+            />
+          </div>
+        ) : activeTab === 'ranking' ? (
+          <div className="p-8 bg-gradient-to-br from-gray-50 to-white">
+            <TeacherRankingSection
+              teacherId={profile?.id || teacher?.id || ''}
               teacherClassSections={availableClassSections}
             />
           </div>

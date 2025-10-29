@@ -125,7 +125,9 @@ const UsersManagement: React.FC<{ adminId?: string }> = () => {
     percentageMax?: number;
     nameStartsWith?: string;
     nameEndsWith?: string;
+    classSection?: string;
   }>({});
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
 
   useEffect(() => {
     loadUsers();
@@ -141,6 +143,10 @@ const UsersManagement: React.FC<{ adminId?: string }> = () => {
     const { data } = await supabase.from(table).select('*');
     if (data) {
       setUsers(data);
+      if (userType === 'student') {
+        const uniqueClasses = [...new Set(data.map((s: any) => s.class_section).filter(Boolean))].sort();
+        setAvailableClasses(uniqueClasses);
+      }
     }
     setLoading(false);
   };
@@ -149,6 +155,10 @@ const UsersManagement: React.FC<{ adminId?: string }> = () => {
     let filtered = [...users];
 
     if (userType === 'student') {
+      if (filters.classSection) {
+        filtered = filtered.filter(u => u.class_section === filters.classSection);
+      }
+
       if (filters.percentageMin !== undefined) {
         filtered = filtered.filter(u => {
           const percentage = u.latest_percentage || u.overall_percentage || 0;
@@ -289,6 +299,8 @@ const UsersManagement: React.FC<{ adminId?: string }> = () => {
             onFilterChange={handleFilterChange}
             currentSort={sortConfig}
             filters={filters}
+            availableClasses={availableClasses}
+            showClassFilter={true}
           />
         </div>
       )}

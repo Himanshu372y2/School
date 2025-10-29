@@ -16,9 +16,12 @@ interface Testimonial {
 const TestimonialsSection: React.FC = () => {
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [allTestimonials, setAllTestimonials] = useState<Testimonial[]>([]);
   const [ratingsCount, setRatingsCount] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showAllRatings, setShowAllRatings] = useState(false);
+  const [displayCount, setDisplayCount] = useState(4);
 
   useEffect(() => {
     loadRatings();
@@ -30,8 +33,7 @@ const TestimonialsSection: React.FC = () => {
         .from('public_ratings')
         .select('*')
         .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(6);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -44,7 +46,8 @@ const TestimonialsSection: React.FC = () => {
           rating: rating.rating,
           image: 'data\\images\\Default.jpg'
         }));
-        setTestimonials(formattedTestimonials);
+        setAllTestimonials(formattedTestimonials);
+        setTestimonials(formattedTestimonials.slice(0, displayCount));
         setRatingsCount(data.length);
         const avgRating = data.reduce((sum: number, r: any) => sum + r.rating, 0) / data.length;
         setAverageRating(avgRating);
@@ -55,6 +58,14 @@ const TestimonialsSection: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (showAllRatings) {
+      setTestimonials(allTestimonials);
+    } else {
+      setTestimonials(allTestimonials.slice(0, displayCount));
+    }
+  }, [showAllRatings, allTestimonials, displayCount]);
 
   return (
     <section className="py-20 bg-gradient-to-br from-white via-orange-50/20 to-yellow-50/30 relative overflow-hidden">
@@ -104,7 +115,8 @@ const TestimonialsSection: React.FC = () => {
             <p className="text-gray-600 text-lg mb-4">No testimonials yet. Be the first to rate our school!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {testimonials.map((testimonial, index) => (
             <motion.div
               key={index}
@@ -149,6 +161,21 @@ const TestimonialsSection: React.FC = () => {
             </motion.div>
             ))}
           </div>
+          {allTestimonials.length > displayCount && !showAllRatings && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 text-center"
+            >
+              <button
+                onClick={() => setShowAllRatings(true)}
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                View All {allTestimonials.length} Ratings
+              </button>
+            </motion.div>
+          )}
+          </>
         )}
 
         <motion.div
